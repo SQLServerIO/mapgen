@@ -11,8 +11,10 @@ import (
 )
 
 var cpuprofile = flag.String("cpuprofile", "", "write cpu profile to file")
-var printOctave = flag.Bool("octaves", false, "also outputs the first three octaves (creates 4x bigger outputs)")
+var printOctave = flag.Bool("printoctaves", false, "also outputs the first three octaves (creates 4x bigger outputs)")
+var octaves = flag.Int("octaves", 3, "the amount of octaves to generate")
 var zoomFlag = flag.Float64("zoom", 8, "zoom on the terrain")
+var sealevel = flag.Float64("sealevel", 0.4, "the level of the sea")
 var xFlag = flag.Int("x", 1280, "the horizontal size")
 var yFlag = flag.Int("y", 960, "the vertical size")
 var seedFlag = flag.Int64("seed", 0, "the seed for the noise")
@@ -34,7 +36,7 @@ func main() {
 	seed := *seedFlag
 
 	var tot *image.RGBA
-	t := NewTerrain(3, zoom, 0.4, seed)
+	t := NewTerrain(*octaves, zoom, 0.4, seed)
 
 	if *printOctave {
 		m := t.Render(x, y)

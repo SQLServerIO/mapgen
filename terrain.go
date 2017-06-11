@@ -12,17 +12,26 @@ type Terrain2D struct {
 
 	//Sealevel varies between 0 and 1 and determines where to draw blue
 	sealevel float64
+
+	scalefactor float64
 }
 
-func NewTerrain(octavesAmount int, scalefactor, sealevel float64, seed int64) *Terrain2D {
+func NewTerrain(octavesAmount int, zoom, sealevel float64, seed int64) *Terrain2D {
 	var octaves []*OctaveNoise
 	for i := 1; i <= octavesAmount; i += 1 {
 		//octaves = append(octaves, NewOctaveNoise(math.Pow(2, float64(i))*scalefactor, seed))
-		octaves = append(octaves, NewOctaveNoise(float64(i)*scalefactor, seed))
+		octaves = append(octaves, NewOctaveNoise(float64(i*i*2), 0.02/zoom, seed))
 	}
+
+	var scale float64
+	for i := 0; i < octavesAmount; i++ {
+		scale += 1 / octaves[i].octaveindex
+	}
+
 	return &Terrain2D{
-		octaves:  octaves,
-		sealevel: sealevel,
+		octaves:     octaves,
+		sealevel:    sealevel,
+		scalefactor: scale,
 	}
 }
 
@@ -32,7 +41,7 @@ func (t *Terrain2D) Height(x, y float64) float64 {
 	for _, octave := range t.octaves {
 		sum += octave.Eval2(x, y)
 	}
-	sum /= float64(len(t.octaves))
+	sum /= t.scalefactor
 	return sum
 }
 
@@ -50,6 +59,22 @@ func (t *Terrain2D) RenderZoom(x, y int, zoom float64) *image.RGBA {
 		}
 	}
 	return m
+}
+
+func (t *Terrain2D) RenderOctaves(x, y int) (images []*image.RGBA) {
+	for i := 0; i < len(t.octaves); i++ {
+		images = append(images, image.NewRGBA(image.Rect(0, 0, x, y)))
+	}
+	for i := 0; i < x; i++ {
+		for j := 0; j < y; j++ {
+			for o, octave := range t.octaves {
+				// height is divided by 2 to have a range of 1.0 instead of 2.0 (-1,+1)
+				height := octave.Eval2(float64(i), float64(j))*octave.octaveindex/2 + 0.5
+				images[o].Set(i, j, colorizer(height, 0))
+			}
+		}
+	}
+	return
 }
 
 //value must be between 0 and 1

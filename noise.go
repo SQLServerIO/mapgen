@@ -18,14 +18,14 @@ func (on *OctaveNoise) Eval2(x, y float64) float64 {
 	return on.Noise.Eval2(
 		x*on.octave,
 		y*on.octave,
-	)
+	) / on.octave
 }
 func (on *OctaveNoise) Eval3(x, y, z float64) float64 {
 	return on.Noise.Eval3(
 		x*on.octave,
 		y*on.octave,
 		z*on.octave,
-	)
+	) / on.octave
 }
 func (on *OctaveNoise) Eval4(x, y, z, w float64) float64 {
 	return on.Noise.Eval4(
@@ -33,5 +33,5 @@ func (on *OctaveNoise) Eval4(x, y, z, w float64) float64 {
 		y*on.octave,
 		z*on.octave,
 		w*on.octave,
-	)
+	) / on.octave
 }

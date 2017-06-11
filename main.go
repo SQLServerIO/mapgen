@@ -15,6 +15,7 @@ var printOctave = flag.Bool("octaves", false, "also outputs the first three octa
 var zoomFlag = flag.Float64("zoom", 8, "zoom on the terrain")
 var xFlag = flag.Int("x", 1280, "the horizontal size")
 var yFlag = flag.Int("y", 960, "the vertical size")
+var seedFlag = flag.Int64("seed", 0, "the seed for the noise")
 
 func main() {
 	flag.Parse()
@@ -27,19 +28,15 @@ func main() {
 		defer pprof.StopCPUProfile()
 	}
 
-	var seed int64
-	var zoom float64
-
-	zoom = *zoomFlag
+	zoom := *zoomFlag
 	x := *xFlag
 	y := *yFlag
-
-	printOctaves := false
+	seed := *seedFlag
 
 	var tot *image.RGBA
 	t := NewTerrain(3, zoom, 0.4, seed)
 
-	if *printOctaves {
+	if *printOctave {
 		m := t.Render(x, y)
 		o := t.RenderOctaves(x, y)
 
@@ -50,7 +47,7 @@ func main() {
 		draw.Draw(tot, image.Rect(0, y+1, x, y*2+1), o[1], image.ZP, draw.Src)
 		draw.Draw(tot, image.Rect(x+1, y+1, x*2+1, y*2+1), o[2], image.ZP, draw.Src)
 	} else {
-		tot = t.Render()
+		tot = t.Render(x, y)
 	}
 	outfile, err := os.OpenFile("out.png", os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {

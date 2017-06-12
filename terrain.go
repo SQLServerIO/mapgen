@@ -3,6 +3,9 @@ package main
 import (
 	"image"
 	"image/color"
+	"image/draw"
+	"log"
+	"runtime"
 
 	colorful "github.com/lucasb-eyer/go-colorful"
 )
@@ -51,12 +54,26 @@ func (t *Terrain2D) Render(x, y int) *image.RGBA {
 
 func (t *Terrain2D) RenderZoom(x, y int, zoom float64) *image.RGBA {
 	m := image.NewRGBA(image.Rect(0, 0, x, y))
-	for i := 0; i < x; i++ {
-		for j := 0; j < y; j++ {
-			// height is divided by 2 to have a range of 1.0 instead of 2.0 (-1,+1)
-			height := t.Height(float64(i), float64(j))/2 + 0.5
-			m.Set(i, j, colorizer(height, t.sealevel))
-		}
+	slices := make(chan *image.RGBA)
+	amount := runtime.GOMAXPROCS(0)
+	for i := 0; i < amount; i++ {
+		go func(i int) {
+			r := image.Rect((x/amount)*i, 0, (x/amount)*(i+1), y)
+			m := image.NewRGBA(r)
+			for i := r.Min.X; i < r.Max.X; i++ {
+				for j := 0; j < y; j++ {
+					// height is divided by 2 to have a range of 1.0 instead of 2.0 (-1,+1)
+					height := t.Height(float64(i), float64(j))/2 + 0.5
+					m.Set(i, j, colorizer(height, t.sealevel))
+				}
+			}
+			slices <- m
+		}(i)
+	}
+	for i := 0; i < amount; i++ {
+		tmp := <-slices
+		log.Printf("Composing slice with x: %d → %d", tmp.Rect.Min.X, tmp.Rect.Max.X)
+		draw.Draw(m, tmp.Rect, tmp, tmp.Rect.Min, draw.Src)
 	}
 	return m
 }
